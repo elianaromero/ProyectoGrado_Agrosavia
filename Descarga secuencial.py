@@ -36,12 +36,12 @@ import python_utils
 
 
 # direccion de la tabla de etiquetas
-ruta = "/home/edwin/Desktop/Imagenes Satelitales/carb_labels.csv"
+ruta = "E:/User/Escritorio/SEMESTRE 9/PROY GRADO 1/Python Imagenes/OM_labels.csv"
 
-carb_labels = pd.read_csv(ruta, delimiter=',' , index_col=0)     # cargo la tabla de etiquetas
-carb_labels_copy = copy.deepcopy(carb_labels)         #genero una copia real de los datos
+labels = pd.read_csv(ruta, delimiter=',' , index_col=0)     # cargo la tabla de etiquetas
+labels_copy = copy.deepcopy(labels)         #genero una copia real de los datos
 
-carb_statistics = carb_labels_copy.describe()
+labels_statistics = labels_copy.describe()
 
 def getImage(latitud, longitud):
     """
@@ -61,7 +61,7 @@ def getImage(latitud, longitud):
     # cero grados es el Norte
     calculo_Bbox = [latitud, longitud] # Genero una caja contenedora de x Km^2 para la imagen satelital 
     start = geopy.Point(calculo_Bbox)   # latitud , longitud
-    d = geopy.distance.GeodesicDistance(kilometers = 0.011)   
+    d = geopy.distance.GeodesicDistance(kilometers = 0.010)   
     endPoint1 = d.destination(point=start, bearing = 180)     # distancia que se recorre hacia abajo
     endPoint1 = d.destination(point=endPoint1, bearing = 270)     # distancia que se recorre hacia izda
     latitud1 = endPoint1.latitude        # Lat y Long de esquina inferior Izda
@@ -70,7 +70,7 @@ def getImage(latitud, longitud):
     print(endPoint1)
     
     start = geopy.Point(calculo_Bbox)   # latitud , longitud
-    d = geopy.distance.GeodesicDistance(kilometers = 0.011)   
+    d = geopy.distance.GeodesicDistance(kilometers = 0.010)   
     endPoint2 = d.destination(point=start, bearing = 0)     # distancia que se recorre hacia arriba
     endPoint2 = d.destination(point=endPoint2, bearing = 90)     # distancia que se recorre hacia Derecha
     latitud2 = endPoint2.latitude        # Lat y Long de esquina superior derecha
@@ -128,7 +128,7 @@ def getImage(latitud, longitud):
         evalscript=evalscript_all_bands,
         input_data=[SentinelHubRequest.input_data(
                 data_collection=DataCollection.SENTINEL2_L1C,
-                time_interval=('2015-06-01', '2020-06-30'),
+                time_interval=('2015-06-01', '2016-06-30'),
                 mosaicking_order='leastCC')],
         responses=[SentinelHubRequest.output_response('default', MimeType.TIFF)],
         bbox=BBox_coordenadas,
@@ -146,7 +146,7 @@ def getImage(latitud, longitud):
 
 def sueloDesnudoNDVI(image):   
     '''
-    para que se considere suelo desnudo el NDVI debe ser menor a 0.1
+    para que se considere suelo desnudo el NDVI debe estar entre 0 y 0.2
 
     Parameters
     ----------
@@ -155,7 +155,7 @@ def sueloDesnudoNDVI(image):
 
     Returns 
     -------
-       Retorna TRUE si el NDVI es MENOR O IGUAL a 0.1, FALSE si el MAYOR a 0.1
+       Retorna TRUE si el NDVI esta ENTRE 0 Y 0.1, FALSE si es DIFERENTE a 0.1
 
     '''
     banda4 = image[0,0,3]
@@ -168,18 +168,18 @@ def sueloDesnudoNDVI(image):
     ndvi = (banda8.astype(float) - banda4.astype(float)) / (banda8 + banda4) #Formula de índice de vegetación de diferencia normalizada.
     print('El NDVI es:', ndvi)
     
-    if ndvi <= 0.1:
+    if 0 < ndvi < 0.2:
         a = True
     else:
         a = False
-    return(a)
+    return a, ndvi
     
     
-carb_locations = copy.deepcopy(carb_labels_copy)
+carb_locations = copy.deepcopy(labels_copy)
 #carb_locations.drop(['Carb [%]'], axis=1, inplace=True)
 
 #creacón de la las columnas de la tabla
-tabla_features_labels = pd.DataFrame(columns=['lat','long','B1','B2','B3','B4','B5','B6','B7','B8','B8A','B9','B10','B11','B12','Carb [%]'])
+tabla_features_labels = pd.DataFrame(columns=['lat','long','NDVI','B1','B2','B3','B4','B5','B6','B7','B8','B8A','B9','B10','B11','B12','OM [%]'])
 
 #NOTA: Sila descarga es interumpida continuar la descarga desde una muestra despues de la ultima registrada cambiando iloc
 
@@ -194,7 +194,7 @@ for index, row in carb_locations.iloc[0:].iterrows():
     print('IMAGEN ES:' ,type(image1))
     print(image1.shape)
     print(image1[0,0,0])
-    a = sueloDesnudoNDVI(image1) 
+    a, ndvi = sueloDesnudoNDVI(image1) 
     print('El suelo esta desnudo', a)
     
     if a == True:
@@ -212,14 +212,14 @@ for index, row in carb_locations.iloc[0:].iterrows():
         B10 = image1[0,0,10]
         B11 = image1[0,0,11]
         B12= image1[0,0,12]
-        carb = row['Carb [%]']
+        label_col = row['OM [%]']
         # Guardo los valores de las bandas en 
-        tabla_features_labels = tabla_features_labels.append({'lat':lat,'long':long,'B1':B1, 'B2':B2, 'B3':B3, 'B4':B4,\
+        tabla_features_labels = tabla_features_labels.append({'lat':lat,'long':long,'NDVI':ndvi,'B1':B1, 'B2':B2, 'B3':B3, 'B4':B4,\
                                                               'B5':B5,'B6':B6,'B7':B7,'B8':B8,'B8A':B8A,'B9':B9,'B10':B10,\
-                                                              'B11':B11,'B12':B12,'Carb [%]':carb}, ignore_index=True)
+                                                              'B11':B11,'B12':B12,'OM [%]':label_col}, ignore_index=True)
     print('el numerdo de muestra es:',index)
     #guardo la tabla actualizada
-    tabla_features_labels.to_csv('/home/edwin/Desktop/Imagenes Satelitales/Features_Labels_Carb.csv')
+    tabla_features_labels.to_csv('E:/User/Escritorio/SEMESTRE 9/PROY GRADO 1/Python Imagenes/Bases Datos Imagenes/Features_Labels_OM.csv')
     
    
  
