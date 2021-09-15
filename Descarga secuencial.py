@@ -4,7 +4,8 @@ Created on Thu Aug 12 17:17:02 2021
 
 @author: edwin
 
-Este script descarga de la tabla de propiedades con lat,lon la imagen multiesprectral y la guarda en el disco
+Este script descarga de la tabla de propiedades fisicoquimicas con lat,lon la imagen multiesprectral y
+ guarda los valores de banda en una tabla 
 """
 #librerias
 import cv2
@@ -166,7 +167,7 @@ def sueloDesnudoNDVI(image):
     print('El valor de la banda 8 es:', banda8)
 
     ndvi = (banda8.astype(float) - banda4.astype(float)) / (banda8 + banda4) #Formula de índice de vegetación de diferencia normalizada.
-    print('El NDVI es:', ndvi)
+    print('El NDVI es:', ndvi) 
     
     if 0 < ndvi < 0.2:
         a = True
