@@ -56,7 +56,7 @@ for index, row in tabla_features_labels.iterrows():
          dx = derivada(y1, y2, l1, l2)
          temporal.append(dx) # Agrega a la fila de derivadas un valor columna a columna en cada pasada
      first_derivative.loc[index] = temporal # Agrega al dataframe de derivadas la fila completa 
-
+# inserta en el dataset la primera derivada
 for n in range(1,13,1):
     tabla_features_labels.insert(15+n,'B'+str(n)+'dx',first_derivative['B'+str(n)+'dx'])
 
@@ -75,10 +75,35 @@ for index, row in tabla_features_labels.iterrows():
          temporal.append(dx2) # Agrega a la fila de derivadas un valor columna a columna en cada pasada
      second_derivative.loc[index] = temporal # Agrega al dataframe de derivadas la fila completa 
 
+# Inserta en el dataset la segunda derivada
 for n in range(1,12,1):
     tabla_features_labels.insert(27+n,'B'+str(n)+'dx2', second_derivative['B'+str(n)+'dx2'])
 
+#--------- ELIMINACIÓN DEL CONTINUO
+
+import numpy as np
+import pysptools.spectro as spectro
+from scipy.spatial import ConvexHull
+import matplotlib.pyplot as plt
+
+# Vector donde se almacenaran las derivadas B1cr -> B1 continuous removed
+remocion_continuo = pd.DataFrame(columns=['B1cr','B2cr','B3cr','B4cr','B5cr','B6cr','B7cr','B8cr','B9cr','B10cr','B11cr','B12cr', 'B13cr'])
+
+# remoción del continuo con ConvexHull para todas las firmas espectrales del dataset
+for index, row in tabla_features_labels.iterrows():
+     bandas = tabla_features_labels.iloc[index, 3:16]  # Localiza los 12 valores de la firma espectral en la fila index
+     # selecciona de la eliminacion del continuo en el arreglo de valores normalizados ????? 
+     continuo = np.array(spectro.convex_hull_removal(bandas, longitudes) [0]).reshape(1, -1) 
+     continuo = continuo[0].tolist()
+     remocion_continuo.loc[index] = continuo # Agrega al dataframe de remocion del continuo la los valores de banda sin continuo y normalizadas???
+
+# inserta en el dataset la firma la remocion del continuo de cada firma espetral
+for n in range(1,13,1):
+    tabla_features_labels.insert(38+n,'B'+str(n)+'cr', remocion_continuo['B'+str(n)+'cr'])
+
+'''
 # HABILITAR Linea para guardado de los datos
 #tabla_features_labels.to_csv('E:/User/Escritorio/SEMESTRE 9/PROY GRADO 1/Python Imagenes/Bases Datos Imagenes/Features_Labels_OM_derivatives.csv')
 
+'''
 
